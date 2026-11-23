@@ -1,0 +1,52 @@
+name: Gerar APK SCARAPC Sync
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar código do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Configurar Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Montar projeto e configurar permissões Android
+        run: |
+          flutter create --org com.scaramau --project-name scarapc_sync app
+          cp main.dart app/lib/main.dart
+          cd app
+          flutter pub add http permission_handler
+          python3 -c '
+          p = "android/app/src/main/AndroidManifest.xml"
+          txt = open(p).read()
+          perms = """    <uses-permission android:name="android.permission.INTERNET" />
+              <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+              <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+          """
+          txt = txt.replace("<application", perms + "    <application", 1)
+          txt = txt.replace("<application", "<application android:usesCleartextTraffic=\"true\"", 1)
+          txt = txt.replace("android:label=\"scarapc_sync\"", "android:label=\"SCARAPC Sync\"", 1)
+          open(p, "w").write(txt)
+          '
+
+      - name: Compilar APK
+        working-directory: app
+        run: flutter build apk --release
+
+      - name: Disponibilizar APK para download
+        uses: actions/upload-artifact@v4
+        with:
+          name: SCARAPC-Sync-APK
+          path: app/build/app/outputs/flutter-apk/app-release.apk
