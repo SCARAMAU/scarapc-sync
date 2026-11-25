@@ -27,7 +27,7 @@ jobs:
           flutter create --org com.scaramau --project-name scarapc_sync app
           cp main.dart app/lib/main.dart
           cd app
-          flutter pub add http permission_handler
+          flutter pub add http permission_handler:11.3.1
           python3 -c '
           p = "android/app/src/main/AndroidManifest.xml"
           txt = open(p).read()
